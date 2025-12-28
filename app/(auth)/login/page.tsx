@@ -3,15 +3,37 @@
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Sparkles, AlertCircle } from "lucide-react";
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 
 function LoginContent() {
   const supabase = createClient();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
   const message = searchParams.get("message");
+  const [isChecking, setIsChecking] = useState(true);
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        router.replace("/");
+      } else {
+        setIsChecking(false);
+      }
+    };
+    checkUser();
+  }, [supabase, router]);
+
+  if (isChecking) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-indigo-950 to-black flex items-center justify-center">
+        <div className="text-gray-400">로딩 중...</div>
+      </div>
+    );
+  }
 
   const handleKakaoLogin = async () => {
     await supabase.auth.signInWithOAuth({

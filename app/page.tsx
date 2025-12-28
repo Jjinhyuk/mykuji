@@ -1,19 +1,57 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/server";
 
-export default function Home() {
+export default async function Home() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let profile = null;
+  if (user) {
+    const { data } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+    profile = data;
+  }
+
+  const isSeller = profile?.role === "seller" || profile?.role === "admin";
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white">
       <header className="container mx-auto px-4 py-6">
         <nav className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-indigo-400">Mykuzi</h1>
           <div className="flex gap-4">
-            <Link href="/login">
-              <Button variant="ghost">로그인</Button>
-            </Link>
-            <Link href="/apply-seller">
-              <Button>판매자 신청</Button>
-            </Link>
+            {user ? (
+              <>
+                {isSeller ? (
+                  <Link href="/seller">
+                    <Button className="bg-indigo-600 hover:bg-indigo-700">
+                      대시보드
+                    </Button>
+                  </Link>
+                ) : (
+                  <Link href="/apply-seller">
+                    <Button className="bg-indigo-600 hover:bg-indigo-700">
+                      판매자 신청
+                    </Button>
+                  </Link>
+                )}
+              </>
+            ) : (
+              <>
+                <Link href="/login">
+                  <Button variant="ghost">로그인</Button>
+                </Link>
+                <Link href="/apply-seller">
+                  <Button>판매자 신청</Button>
+                </Link>
+              </>
+            )}
           </div>
         </nav>
       </header>
@@ -31,11 +69,27 @@ export default function Home() {
             실시간으로 추첨 결과를 공개하세요.
           </p>
           <div className="flex gap-4 justify-center">
-            <Link href="/login">
-              <Button size="lg" className="bg-indigo-600 hover:bg-indigo-700">
-                시작하기
-              </Button>
-            </Link>
+            {user ? (
+              isSeller ? (
+                <Link href="/seller">
+                  <Button size="lg" className="bg-indigo-600 hover:bg-indigo-700">
+                    대시보드로 이동
+                  </Button>
+                </Link>
+              ) : (
+                <Link href="/apply-seller">
+                  <Button size="lg" className="bg-indigo-600 hover:bg-indigo-700">
+                    판매자 신청하기
+                  </Button>
+                </Link>
+              )
+            ) : (
+              <Link href="/login">
+                <Button size="lg" className="bg-indigo-600 hover:bg-indigo-700">
+                  시작하기
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
 
