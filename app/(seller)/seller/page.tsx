@@ -2,23 +2,9 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Plus } from "lucide-react";
-
-const statusColors = {
-  draft: "bg-gray-500",
-  live: "bg-green-500",
-  paused: "bg-yellow-500",
-  closed: "bg-red-500",
-};
-
-const statusLabels = {
-  draft: "초안",
-  live: "진행중",
-  paused: "일시중지",
-  closed: "종료",
-};
+import { BoardCard } from "@/components/dashboard/BoardCard";
 
 export default async function SellerDashboard() {
   const supabase = await createClient();
@@ -39,11 +25,27 @@ export default async function SellerDashboard() {
     redirect("/apply-seller");
   }
 
+  // 보드 목록 가져오기
   const { data: boards } = await supabase
     .from("boards")
     .select("*")
     .eq("seller_id", user.id)
     .order("created_at", { ascending: false });
+
+  // 각 보드의 draw_events 존재 여부 확인
+  const boardsWithDrawInfo = await Promise.all(
+    (boards || []).map(async (board) => {
+      const { count } = await supabase
+        .from("draw_events")
+        .select("*", { count: "exact", head: true })
+        .eq("board_id", board.id);
+
+      return {
+        ...board,
+        hasDrawEvents: (count || 0) > 0,
+      };
+    })
+  );
 
   return (
     <div className="space-y-6">
@@ -59,33 +61,14 @@ export default async function SellerDashboard() {
         </Link>
       </div>
 
-      {boards && boards.length > 0 ? (
+      {boardsWithDrawInfo.length > 0 ? (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {boards.map((board) => (
-            <Link key={board.id} href={`/seller/boards/${board.id}`}>
-              <Card className="bg-gray-800 border-gray-700 hover:border-indigo-500 transition-colors cursor-pointer">
-                <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between">
-                    <CardTitle className="text-white text-lg">
-                      {board.title}
-                    </CardTitle>
-                    <Badge
-                      className={`${statusColors[board.status as keyof typeof statusColors]} text-white`}
-                    >
-                      {statusLabels[board.status as keyof typeof statusLabels]}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-400 text-sm line-clamp-2">
-                    {board.description || "설명 없음"}
-                  </p>
-                  <p className="text-gray-500 text-xs mt-2">
-                    {new Date(board.created_at).toLocaleDateString("ko-KR")}
-                  </p>
-                </CardContent>
-              </Card>
-            </Link>
+          {boardsWithDrawInfo.map((board) => (
+            <BoardCard
+              key={board.id}
+              board={board}
+              hasDrawEvents={board.hasDrawEvents}
+            />
           ))}
         </div>
       ) : (
