@@ -4,8 +4,9 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Play, Pause, Square, Copy, ExternalLink, Settings } from "lucide-react";
+import { Play, ExternalLink } from "lucide-react";
 import { BoardStatusButtons } from "@/components/control/BoardStatusButtons";
+import { CopyButton } from "@/components/control/CopyButton";
 
 const statusColors = {
   draft: "bg-gray-500",
@@ -59,7 +60,8 @@ export default async function BoardDetailPage({
 
   const totalDraws = prizes?.reduce((sum, p) => sum + p.qty_total, 0) || 0;
   const remainingDraws = prizes?.reduce((sum, p) => sum + p.qty_left, 0) || 0;
-  const overlayUrl = `${process.env.NEXT_PUBLIC_SITE_URL || ""}/o/${board.id}?token=${board.overlay_token}`;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+  const overlayUrl = `${siteUrl}/o/${board.id}?token=${board.overlay_token}`;
 
   return (
     <div className="space-y-6">
@@ -134,17 +136,9 @@ export default async function BoardDetailPage({
         <CardContent>
           <div className="flex gap-2">
             <code className="flex-1 bg-gray-900 px-4 py-3 rounded-lg text-gray-300 text-sm overflow-x-auto">
-              {overlayUrl || `${typeof window !== 'undefined' ? window.location.origin : ''}/o/${board.id}?token=${board.overlay_token}`}
+              {overlayUrl}
             </code>
-            <Button
-              variant="outline"
-              className="border-gray-600"
-              onClick={() => {
-                navigator.clipboard.writeText(overlayUrl);
-              }}
-            >
-              <Copy className="w-4 h-4" />
-            </Button>
+            <CopyButton text={overlayUrl} />
             <Link href={`/o/${board.id}?token=${board.overlay_token}`} target="_blank">
               <Button variant="outline" className="border-gray-600">
                 <ExternalLink className="w-4 h-4" />
