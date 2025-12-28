@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
+import { User } from "lucide-react";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -12,7 +13,7 @@ export default async function Home() {
   if (user) {
     const { data } = await supabase
       .from("profiles")
-      .select("role")
+      .select("role, display_name, avatar_url")
       .eq("id", user.id)
       .single();
     profile = data;
@@ -25,30 +26,47 @@ export default async function Home() {
       <header className="container mx-auto px-4 py-6">
         <nav className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-indigo-400">Mykuzi</h1>
-          <div className="flex gap-4">
+          <div className="flex items-center gap-3">
             {user ? (
               <>
                 {isSeller ? (
                   <Link href="/seller">
-                    <Button className="bg-indigo-600 hover:bg-indigo-700">
+                    <Button variant="ghost" className="text-gray-300 hover:text-white">
                       대시보드
                     </Button>
                   </Link>
                 ) : (
                   <Link href="/apply-seller">
-                    <Button className="bg-indigo-600 hover:bg-indigo-700">
+                    <Button variant="ghost" className="text-gray-300 hover:text-white">
                       판매자 신청
                     </Button>
                   </Link>
                 )}
+                <Link href="/profile">
+                  <div className="w-10 h-10 rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center cursor-pointer transition-colors overflow-hidden">
+                    {profile?.avatar_url ? (
+                      <img
+                        src={profile.avatar_url}
+                        alt="프로필"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User className="w-5 h-5 text-gray-300" />
+                    )}
+                  </div>
+                </Link>
               </>
             ) : (
               <>
                 <Link href="/login">
-                  <Button variant="ghost">로그인</Button>
+                  <Button variant="ghost" className="text-gray-300 hover:text-white">
+                    로그인
+                  </Button>
                 </Link>
                 <Link href="/apply-seller">
-                  <Button>판매자 신청</Button>
+                  <Button className="bg-indigo-600 hover:bg-indigo-700">
+                    판매자 신청
+                  </Button>
                 </Link>
               </>
             )}
