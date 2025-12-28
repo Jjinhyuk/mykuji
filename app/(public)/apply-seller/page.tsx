@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import Link from "next/link";
-import { CheckCircle, Clock, XCircle, Check } from "lucide-react";
+import { CheckCircle, Clock, XCircle, Check, Home } from "lucide-react";
 
 const PLATFORMS = [
   { id: "youtube", name: "YouTube", icon: "🎬", color: "bg-red-500/20 border-red-500/50 hover:bg-red-500/30" },
@@ -38,6 +38,8 @@ export default function ApplySellerPage() {
     status: string;
   } | null>(null);
   const [profile, setProfile] = useState<{ role: string } | null>(null);
+  const [justSubmitted, setJustSubmitted] = useState(false);
+  const [countdown, setCountdown] = useState(5);
 
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [channelUrl, setChannelUrl] = useState("");
@@ -84,6 +86,18 @@ export default function ApplySellerPage() {
 
     checkAuth();
   }, [supabase, router]);
+
+  // 신청 직후 5초 카운트다운 및 자동 이동
+  useEffect(() => {
+    if (justSubmitted && countdown > 0) {
+      const timer = setTimeout(() => {
+        setCountdown(countdown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if (justSubmitted && countdown === 0) {
+      router.push("/");
+    }
+  }, [justSubmitted, countdown, router]);
 
   const togglePlatform = (platformId: string) => {
     setSelectedPlatforms((prev) =>
@@ -136,6 +150,7 @@ export default function ApplySellerPage() {
 
       toast.success("신청이 완료되었습니다!");
       setExistingApplication({ status: "pending" });
+      setJustSubmitted(true);
     } catch (error) {
       console.error(error);
       toast.error("신청에 실패했습니다");
@@ -187,35 +202,57 @@ export default function ApplySellerPage() {
           </CardHeader>
           <CardContent className="text-center">
             {existingApplication.status === "pending" && (
-              <div className="py-8">
+              <div className="py-6">
                 <Clock className="w-16 h-16 mx-auto text-yellow-400 mb-4" />
                 <p className="text-xl text-white font-semibold">심사 중</p>
                 <p className="text-gray-400 mt-2">
                   신청이 접수되었습니다. 심사 후 결과를 알려드릴게요.
                 </p>
+                <p className="text-gray-500 text-sm mt-4">
+                  이 페이지는 판매자 신청 버튼을 클릭하면 확인 가능합니다.
+                </p>
+
+                {justSubmitted && (
+                  <p className="text-indigo-400 text-sm mt-4">
+                    {countdown}초 후 메인페이지로 이동합니다...
+                  </p>
+                )}
+
+                <Link href="/">
+                  <Button className="mt-6 bg-indigo-600 hover:bg-indigo-700">
+                    <Home className="w-4 h-4 mr-2" />
+                    메인페이지로 이동
+                  </Button>
+                </Link>
               </div>
             )}
             {existingApplication.status === "approved" && (
-              <div className="py-8">
+              <div className="py-6">
                 <CheckCircle className="w-16 h-16 mx-auto text-green-400 mb-4" />
                 <p className="text-xl text-white font-semibold">승인됨</p>
                 <p className="text-gray-400 mt-2">
                   축하합니다! 이제 쿠지판을 만들 수 있습니다.
                 </p>
                 <Link href="/seller">
-                  <Button className="mt-4 bg-indigo-600 hover:bg-indigo-700">
+                  <Button className="mt-6 bg-indigo-600 hover:bg-indigo-700">
                     대시보드로 이동
                   </Button>
                 </Link>
               </div>
             )}
             {existingApplication.status === "rejected" && (
-              <div className="py-8">
+              <div className="py-6">
                 <XCircle className="w-16 h-16 mx-auto text-red-400 mb-4" />
                 <p className="text-xl text-white font-semibold">반려됨</p>
                 <p className="text-gray-400 mt-2">
                   신청이 반려되었습니다. 문의사항은 관리자에게 연락해주세요.
                 </p>
+                <Link href="/">
+                  <Button className="mt-6 bg-indigo-600 hover:bg-indigo-700">
+                    <Home className="w-4 h-4 mr-2" />
+                    메인페이지로 이동
+                  </Button>
+                </Link>
               </div>
             )}
           </CardContent>
